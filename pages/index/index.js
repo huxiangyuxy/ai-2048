@@ -10,44 +10,41 @@ Page({
     startY: 0,
     canUndo: false,
     history: null,
-    won: false
+
+    won: false,
+    gameOver: false,
+    allowContinue: false
   },
 
   onLoad() {
     slideAudio = wx.createInnerAudioContext()
-    slideAudio.src = '/assets/sound/slide.wav'
+    slideAudio.src = '/assets/sound/slide.mp3'
     slideAudio.volume = 0.6
 
     mergeAudio = wx.createInnerAudioContext()
-    mergeAudio.src = '/assets/sound/merge.wav'
+    mergeAudio.src = '/assets/sound/merge.mp3'
     mergeAudio.volume = 0.8
 
     this.restart()
   },
 
+  /* =====================
+     游戏初始化 / 重置
+     ===================== */
   restart() {
     const grid = this.createGrid()
     this.addRandom(grid)
     this.addRandom(grid)
+
     this.setData({
       grid,
       score: 0,
       canUndo: false,
       history: null,
-      won: false
+      won: false,
+      gameOver: false,
+      allowContinue: false
     })
-  },
-
-  /* 游戏结束 */
-  isGameOver(grid) {
-    for (let i = 0; i < 4; i++) {
-      for (let j = 0; j < 4; j++) {
-        if (!grid[i][j].value) return false
-        if (j < 3 && grid[i][j].value === grid[i][j + 1].value) return false
-        if (i < 3 && grid[i][j].value === grid[i + 1][j].value) return false
-      }
-    }
-    return true
   },
 
   createGrid() {
@@ -78,22 +75,34 @@ Page({
     grid[r][c].value = Math.random() < 0.9 ? 2 : 4
   },
 
+  /* =====================
+     触摸控制
+     ===================== */
   touchStart(e) {
+    if (this.data.gameOver) return
     const t = e.touches[0]
     this.setData({ startX: t.clientX, startY: t.clientY })
   },
 
   touchEnd(e) {
+    if (this.data.gameOver) return
+
     const t = e.changedTouches[0]
     const dx = t.clientX - this.data.startX
     const dy = t.clientY - this.data.startY
     if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return
+
     Math.abs(dx) > Math.abs(dy)
       ? dx > 0 ? this.move('right') : this.move('left')
       : dy > 0 ? this.move('down') : this.move('up')
   },
 
+  /* =====================
+     核心移动逻辑
+     ===================== */
   move(dir) {
+    if (this.data.gameOver) return
+
     let grid = this.cloneGrid(this.data.grid)
     let score = this.data.score
     let moved = false
@@ -144,9 +153,29 @@ Page({
       mergeAudio.play()
     }
 
+    /* ===== 🎉 胜利检测 ===== */
     if (!this.data.won && grid.flat().some(c => c.value === 2048)) {
-      this.setData({ won: true })
-      wx.showModal({ title: '🎉 恭喜', content: '你已合成 2048！' })
+      this.setData({
+        won: true,
+        gameOver: true
+      })
+
+      wx.showModal({
+        title: '🎉 胜利',
+        content: '恭喜你合成了 2048！',
+        confirmText: '重新开始',
+        cancelText: '继续挑战',
+        success: res => {
+          if (res.confirm) {
+            this.restart()
+          } else {
+            this.setData({
+              gameOver: false,
+              allowContinue: true
+            })
+          }
+        }
+      })
     }
 
     this.setData({
@@ -156,8 +185,14 @@ Page({
     })
   },
 
+  /* =====================
+     回退
+     ===================== */
   undo() {
-    if (!this.data.canUndo) return
-    this.setData({ grid: this.data.history, canUndo: false })
+    if (!this.data.canUndo || this.data.gameOver) return
+    this.setData({
+      grid: this.data.history,
+      canUndo: false
+    })
   }
 })

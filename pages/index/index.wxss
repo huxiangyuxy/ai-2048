@@ -58,7 +58,7 @@
 
 /* 棋盘 */
 .board {
-  background: #bbada0;
+  background: #8a7b6d;
   padding: 10rpx;
   border-radius: 16rpx;
 }
@@ -72,13 +72,13 @@
   height: 150rpx;
   margin: 10rpx;
   border-radius: 12rpx;
-  background: #c0af98;
+  background: #a1988b;
 
   display: flex;
   justify-content: center;
   align-items: center;
 
-  font-size: 56rpx;
+  font-size: 65rpx;
   font-weight: bold;
   color: #7e7462;
 
