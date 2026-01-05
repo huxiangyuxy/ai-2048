@@ -119,7 +119,7 @@ Page({
           arr[i].merged = true
           score += arr[i].value
 
-          if (arr[i].value === 32 && !this.data.hasWon) {
+          if (arr[i].value === 2048 && !this.data.hasWon) {
             this.setData({ hasWon: true })
           }
 
