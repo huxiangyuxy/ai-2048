@@ -1,0 +1,132 @@
+.page {
+  min-height: 100vh;
+  background: #faf8ef;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 125rpx;
+  box-sizing: border-box;
+}
+
+/* 顶部信息区 */
+.header {
+  width: 92%;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 35rpx;
+}
+
+.info-box {
+  width: 180rpx;
+  height: 180rpx;
+  background: #bbada0;
+  border-radius: 16rpx;
+  color: #fff;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.title-box {
+  background: #edc22e;
+  font-size: 64rpx;
+  font-weight: bold;
+}
+
+.label {
+  font-size: 50rpx;
+  opacity: 0.8;
+  font-weight: bold;
+}
+
+.value {
+  font-size: 40rpx;
+  font-weight: bold;
+  margin-top: 6rpx;
+}
+
+/* 引导文字 */
+.tip {
+  margin-bottom: 35rpx;
+  font-size: 35rpx;
+  color: #f1ab64;
+  opacity: 0.7;
+  text-align: center;
+}
+
+/* 棋盘 */
+.board {
+  background: #bbada0;
+  padding: 10rpx;
+  border-radius: 16rpx;
+}
+
+.row {
+  display: flex;
+}
+
+.cell {
+  width: 150rpx;
+  height: 150rpx;
+  margin: 10rpx;
+  border-radius: 12rpx;
+  background: #c0af98;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-size: 56rpx;
+  font-weight: bold;
+  color: #7e7462;
+
+  transition: transform 120ms ease-out;
+}
+
+/* 合并弹跳 */
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.merged {
+  animation: pop 160ms ease-out;
+}
+
+/* 数字颜色 */
+.cell-2 { background: #eee4da; }
+.cell-4 { background: #ede0c8; }
+.cell-8 { background: #f2b179; color: #fff; }
+.cell-16 { background: #f59563; color: #fff; }
+.cell-32 { background: #f67c5f; color: #fff; }
+.cell-64 { background: #f65e3b; color: #fff; }
+.cell-128 { background: #edcf72; }
+.cell-256 { background: #edcc61; }
+.cell-512 { background: #edc850; }
+.cell-1024 { background: #edc53f; }
+.cell-2048 { background: #edc22e; color: #fff; }
+
+/* 按钮 */
+.actions {
+  margin-top: 45rpx;
+  display: flex;
+  gap: 45rpx;
+}
+
+.actions button {
+  width: 300rpx;
+  height: 90rpx;
+  background: #caa989;
+  color: #1f1f1f;
+  font-size: 35rpx;
+  border-radius: 12rpx;
+  line-height: 90rpx;
+}
+
+.actions button[disabled] {
+  background: #d6cec3;
+  color: #999;
+}

@@ -1,0 +1,9 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "2048",
+    "navigationBarBackgroundColor": "#faf8ef"
+  }
+}

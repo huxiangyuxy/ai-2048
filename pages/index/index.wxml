@@ -1,0 +1,48 @@
+<view class="page"
+  bindtouchstart="touchStart"
+  bindtouchend="touchEnd"
+>
+
+  <!-- 顶部信息方块 -->
+  <view class="header">
+    <view class="info-box title-box">2048</view>
+
+    <view class="info-box">
+      <text class="label">分数</text>
+      <text class="value">{{score}}</text>
+    </view>
+
+    <view class="info-box">
+      <text class="label">最高</text>
+      <text class="value">{{bestScore}}</text>
+    </view>
+  </view>
+
+  <!-- 引导文字 -->
+  <view class="tip">
+    合并这些数字，得到 2048
+  </view>
+
+  <!-- 游戏棋盘 -->
+  <view class="board">
+    <block wx:for="{{grid}}" wx:key="r">
+      <view class="row">
+        <block wx:for="{{item}}" wx:key="c">
+          <view
+            class="cell cell-{{item.value}} {{item.merged ? 'merged' : ''}}"
+            style="transform: translate({{item.dx}}rpx, {{item.dy}}rpx)"
+          >
+            {{item.value || ''}}
+          </view>
+        </block>
+      </view>
+    </block>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="actions">
+    <button bindtap="undo" disabled="{{!canUndo}}">回退</button>
+    <button bindtap="restart">重新开始</button>
+  </view>
+
+</view>
