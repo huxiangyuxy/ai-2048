@@ -6,14 +6,16 @@ Page({
     grid: [],
     score: 0,
     bestScore: 0,
+
     startX: 0,
     startY: 0,
+
     canUndo: false,
     history: null,
 
-    won: false,
-    gameOver: false,
-    allowContinue: false
+    hasWon: false,
+    winShown: false,
+    gameOver: false
   },
 
   onLoad() {
@@ -28,9 +30,7 @@ Page({
     this.restart()
   },
 
-  /* =====================
-     游戏初始化 / 重置
-     ===================== */
+  /* ================= 初始化 ================= */
   restart() {
     const grid = this.createGrid()
     this.addRandom(grid)
@@ -41,9 +41,9 @@ Page({
       score: 0,
       canUndo: false,
       history: null,
-      won: false,
-      gameOver: false,
-      allowContinue: false
+      hasWon: false,
+      winShown: false,
+      gameOver: false
     })
   },
 
@@ -51,23 +51,24 @@ Page({
     return Array.from({ length: SIZE }, (_, r) =>
       Array.from({ length: SIZE }, (_, c) => ({
         value: 0,
-        r, c,
-        dx: 0,
-        dy: 0,
+        r,
+        c,
         merged: false
       }))
     )
   },
 
   cloneGrid(grid) {
-    return grid.map(row => row.map(c => ({ ...c })))
+    return grid.map(row =>
+      row.map(cell => ({ ...cell }))
+    )
   },
 
   addRandom(grid) {
     const empty = []
-    grid.forEach((r, i) =>
-      r.forEach((c, j) => {
-        if (!c.value) empty.push([i, j])
+    grid.forEach((row, i) =>
+      row.forEach((c, j) => {
+        if (c.value === 0) empty.push([i, j])
       })
     )
     if (!empty.length) return
@@ -75,9 +76,7 @@ Page({
     grid[r][c].value = Math.random() < 0.9 ? 2 : 4
   },
 
-  /* =====================
-     触摸控制
-     ===================== */
+  /* ================= 触摸 ================= */
   touchStart(e) {
     if (this.data.gameOver) return
     const t = e.touches[0]
@@ -86,7 +85,6 @@ Page({
 
   touchEnd(e) {
     if (this.data.gameOver) return
-
     const t = e.changedTouches[0]
     const dx = t.clientX - this.data.startX
     const dy = t.clientY - this.data.startY
@@ -97,16 +95,21 @@ Page({
       : dy > 0 ? this.move('down') : this.move('up')
   },
 
-  /* =====================
-     核心移动逻辑
-     ===================== */
+  /* ================= 移动核心 ================= */
   move(dir) {
     if (this.data.gameOver) return
 
     let grid = this.cloneGrid(this.data.grid)
     let score = this.data.score
     let moved = false
-    const old = this.cloneGrid(this.data.grid)
+
+    const history = {
+      grid: this.cloneGrid(this.data.grid),
+      score: this.data.score
+    }
+
+    // 清空 merged 状态
+    grid.flat().forEach(c => c.merged = false)
 
     const slide = arr => {
       arr = arr.filter(c => c.value)
@@ -115,20 +118,26 @@ Page({
           arr[i].value *= 2
           arr[i].merged = true
           score += arr[i].value
+
+          if (arr[i].value === 32 && !this.data.hasWon) {
+            this.setData({ hasWon: true })
+          }
+
           arr.splice(i + 1, 1)
         }
       }
-      while (arr.length < SIZE) arr.push({ value: 0 })
+      while (arr.length < SIZE) arr.push({ value: 0, merged: false })
       return arr
     }
 
     const operate = getter => {
       for (let i = 0; i < SIZE; i++) {
         const line = getter(i)
-        const values = line.map(c => c.value)
-        const merged = slide(line)
-        merged.forEach((c, j) => {
-          if (c.value !== values[j]) moved = true
+        const before = line.map(c => c.value)
+        const after = slide(line)
+
+        after.forEach((c, j) => {
+          if (before[j] !== c.value) moved = true
           line[j].value = c.value
           line[j].merged = c.merged
         })
@@ -145,7 +154,6 @@ Page({
     slideAudio.stop()
     slideAudio.play()
 
-    this.setData({ history: old, canUndo: true })
     this.addRandom(grid)
 
     if (grid.flat().some(c => c.merged)) {
@@ -153,45 +161,61 @@ Page({
       mergeAudio.play()
     }
 
-    /* ===== 🎉 胜利检测 ===== */
-    if (!this.data.won && grid.flat().some(c => c.value === 2048)) {
-      this.setData({
-        won: true,
-        gameOver: true
-      })
-
-      wx.showModal({
-        title: '🎉 胜利',
-        content: '恭喜你合成了 2048！',
-        confirmText: '重新开始',
-        cancelText: '继续挑战',
-        success: res => {
-          if (res.confirm) {
-            this.restart()
-          } else {
-            this.setData({
-              gameOver: false,
-              allowContinue: true
-            })
-          }
-        }
-      })
-    }
-
     this.setData({
       grid,
       score,
-      bestScore: Math.max(score, this.data.bestScore)
+      bestScore: Math.max(score, this.data.bestScore),
+      history,
+      canUndo: true
     })
+
+    /* ===== 胜利 ===== */
+    if (this.data.hasWon && !this.data.winShown) {
+      this.setData({ winShown: true })
+      wx.showModal({
+        title: '🎉 胜利',
+        content: '你成功合成了 2048！',
+        confirmText: '重新开始',
+        cancelText: '继续游戏',
+        success: res => {
+          if (res.confirm) this.restart()
+        }
+      })
+      return
+    }
+
+    /* ===== 游戏结束 ===== */
+    if (this.isGameOver(grid)) {
+      this.setData({ gameOver: true })
+      wx.showModal({
+        title: '😢 游戏结束',
+        content: '已经无法移动了',
+        confirmText: '重新开始',
+        showCancel: false,
+        success: () => this.restart()
+      })
+    }
   },
 
-  /* =====================
-     回退
-     ===================== */
+  /* ================= 结束判断 ================= */
+  isGameOver(grid) {
+    for (let i = 0; i < SIZE; i++) {
+      for (let j = 0; j < SIZE; j++) {
+        const v = grid[i][j].value
+        if (v === 0) return false
+        if (j < SIZE - 1 && v === grid[i][j + 1].value) return false
+        if (i < SIZE - 1 && v === grid[i + 1][j].value) return false
+      }
+    }
+    return true
+  },
+
+  /* ================= 回退 ================= */
   undo() {
     if (!this.data.canUndo || this.data.gameOver) return
     this.setData({
-      grid: this.data.history,
+      grid: this.data.history.grid,
+      score: this.data.history.score,
       canUndo: false
     })
   }
